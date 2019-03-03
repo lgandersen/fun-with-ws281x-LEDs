@@ -1,33 +1,10 @@
 import random
 import time
 import numpy as np
-from matplotlib.pyplot import get_cmap
 from rpi_ws281x import Adafruit_NeoPixel
 
-
-# LED strip configuration:
-#LED_COUNT      = 151     # Number of LED pixels.
-LED_COUNT      = 60     # Number of LED pixels.
-LED_PIN        = 18      # GPIO pin connected to the pixels (18 uses PWM!).
-#LED_PIN        = 10     # GPIO pin connected to the pixels (10 uses SPI /dev/spidev0.0).
-LED_FREQ_HZ    = 800000  # LED signal frequency in hertz (usually 800khz)
-LED_DMA        = 10      # DMA channel to use for generating signal (try 10)
-LED_BRIGHTNESS = 255     # Set to 0 for darkest and 255 for brightest
-LED_INVERT     = False   # True to invert the signal (when using NPN transistor level shift)
-LED_CHANNEL    = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
-
-## NOTE THIS DIFFERS FROM strip/cord LEDs
-#            colorWipe(strip, color24bit(255, 0, 0))  # Red wipe (green with cord)
-#            colorWipe(strip, color24bit(0, 255, 0))  # Blue wipe
-#            colorWipe(strip, color24bit(0, 0, 255))  # Green wipe (red with cord)
-CORD_LED = False
-
-def float2int(*args):
-    out = list()
-    for arg in args:
-        out.append(int(round(arg * 255)))
-    return tuple(out)
-
+from config import LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL, CORD_LED
+from utils import color_array
 
 def random_led():
     return random.randint(0, LED_COUNT - 1)
@@ -61,25 +38,9 @@ def color24bit(red, green, blue):
         return int( (red << 16) | (green << 8) | blue )
 
 
-def color_array(cmap, length):
-    cmap = get_cmap(cmap, length)
-    color_array = np.zeros((length, 3), dtype='int')
-    for n in range(length):
-        r, g, b, _ = cmap(n)
-        color_array[n, :] = float2int(r, g, b)
-    return color_array
-
 def plot_colormap(strip, cmap):
     print('Plotting colormap: ', cmap)
-    if cmap == 'strandtest_rainbow':
-        pos = np.linspace(0, 255, LED_COUNT, dtype='int')
-        colors = np.zeros((LED_COUNT, 3), dtype='int')
-        for idx in range(len(pos)):
-            colors[idx, :] = _rainbow(pos[idx])
-        #pos = pos.reshape((1, LED_COUNT))
-        #colors = np.apply_along_axis(_wheel, 0, pos)
-    else:
-        colors = color_array(cmap, LED_COUNT)
+    colors = color_array(cmap, LED_COUNT)
     print('FARVERNE:', colors)
     for n in range(LED_COUNT - 1):
         color = color24bit(*colors[n,:])
@@ -87,47 +48,127 @@ def plot_colormap(strip, cmap):
         strip.show()
     time.sleep(2)
 
-
-def _rainbow(pos):
-    """Generate rainbow colors across 0-255 positions."""
-    if pos < 85:
-        return (pos * 3, 255 - pos * 3, 0)
-    elif pos < 170:
-        pos -= 85
-        return (255 - pos * 3, 0, pos * 3)
-    else:
-        pos -= 170
-        return (0, pos * 3, 255 - pos * 3)
+def decrease_brightness(strip, leds, fading_rate=0.90):
+    lights_on = np.any(leds > 0, axis=1)
+    leds[lights_on] = leds[lights_on] * fading_rate
+    for n in range(leds.shape[0]):
+        if lights_on[n]:
+            color = color24bit(*leds[n,:])
+            strip.setPixelColor(n, color)
+    strip.show()
 
 
-class RandomLights:
-    def __init__(self, strip, cmap='Set1'):
-        self.colors = color_array(cmap, 200)
+
+class RandomLightsTurningOnAndFading:
+    def __init__(self, strip, cmap='strandtest_rainbow', shuffle_colors=False):
+        self.colors = color_array(cmap, LED_COUNT)
         self.strip = strip
         self.leds = np.zeros((LED_COUNT, 3), dtype='int')
         lights2on = 4
         count = 1
         while True:
             idx = random_led()
-            color = random_color(self.colors)
+            if shuffle_colors:
+                color = random_color(self.colors)
+            else:
+                color = self.colors[idx]
             self.strip.setPixelColor(idx, color24bit(*color))
             self.strip.show()
             self.leds[idx, :] = color
             if count == lights2on:
-                self.decrease_brightness()
+                decrease_brightness(self.strip, self.leds, 0.90)
                 count = 1
             else:
                 count += 1
             sleep_ms(40)
 
-    def decrease_brightness(self):
-        lights_on = np.any(self.leds > 0, axis=1)
-        self.leds[lights_on] = self.leds[lights_on] * 0.90
-        for n in range(self.leds.shape[0]):
-            if lights_on[n]:
-                color = color24bit(*self.leds[n,:])
-                self.strip.setPixelColor(n, color)
+class PulseCycling:
+    def __init__(self, strip, cmap='strandtest_rainbow'):
+        self.strip = strip
+        self.colors = color_array(cmap, LED_COUNT)
+        self.leds = np.zeros((LED_COUNT, 3), dtype='int')
+        idx = 0
+        while True:
+            color = self.colors[idx]
+            self.strip.setPixelColor(idx, color24bit(*color))
+            self.leds[idx, :] = color
+            strip.show()
+            idx = (idx + 1) % LED_COUNT
+            sleep_ms(20)
+            decrease_brightness(self.strip, self.leds, 0.90)
+
+
+def create_color_array(length, red_start, red_end, green_start, green_end, blue_start, blue_end):
+    #red_start = 100
+    #red_end =  255
+    #green_start = 0
+    #green_end = 255
+    #blue_start = 0
+    #blue_end = 0
+    red = np.linspace(red_start, red_end, length, dtype='int')
+    green = np.linspace(green_start, green_end, length, dtype='int')
+    blue = np.linspace(blue_start, blue_end, length, dtype='int')
+    color_array = np.array([red, green, blue], dtype='int').T
+    return color_array
+
+def plot_color_array(strip):
+    colors = create_color_array(LED_COUNT)
+    for n in range(LED_COUNT - 1):
+        color = color24bit(*colors[n,:])
+        strip.setPixelColor(n, color)
         strip.show()
+
+class Burst:
+    def __init__(self, colors):
+        self.base_color = colors[0, :]
+        self.peak_color = colors[-1, :]
+        self.colors = colors[1:, :]
+        self.burst_coloring = np.vstack([self.colors, self.colors[-2:0:-1]])
+        self.create_fading()
+
+    def create_fading(self):
+        fade_steps = 50
+        fading_coloring = np.zeros(list(self.burst_coloring.shape) + [fade_steps], dtype='int')
+        for n in range(self.burst_coloring.shape[0]):
+             color_array = create_color_array(
+                    fade_steps,
+                    red_start=self.burst_coloring[n, 0],
+                    red_end=self.base_color[0],
+                    green_start=self.burst_coloring[n, 1],
+                    green_end=self.base_color[1],
+                    blue_start=self.burst_coloring[n, 2],
+                    blue_end=self.base_color[2]
+                    ).T
+             fading_coloring[n, :, :] = color_array
+        self.fading_coloring = fading_coloring
+        self.fade_steps = fade_steps
+
+
+
+def plot_burst(strip):
+    offset_c = 20
+    colors = color_array('strandtest_rainbow', 60)[offset_c: offset_c + 21:4, :]
+    burst = Burst(colors)
+    for n in range(LED_COUNT - 1):
+        strip.setPixelColor(n, color24bit(*burst.base_color))
+        strip.show()
+    while True:
+        count = 0
+        offset = 120#random.randint(burst.burst_coloring.shape[0], LED_COUNT - burst.burst_coloring.shape[0])
+        for n in range(offset, offset + burst.burst_coloring.shape[0]):
+            strip.setPixelColor(n, color24bit(*burst.burst_coloring[count, :]))
+            count += 1
+        strip.show()
+        sleep_ms(200)
+
+        for k in range(burst.fade_steps):
+            count = 0
+            for n in range(offset, offset + burst.burst_coloring.shape[0]):
+                strip.setPixelColor(n, color24bit(*burst.fading_coloring[count, :, k]))
+                count += 1
+            strip.show()
+            sleep_ms(50)
+
 
 
 if __name__ == '__main__':
@@ -140,9 +181,12 @@ if __name__ == '__main__':
     try:
         while True:
             print ('Testing....')
-            #RandomLights(strip)
+            plot_burst(strip)
+            #RandomLightsTurningOnAndFading(strip, cmap='strandtest_rainbow')
+            #PulseCycling(strip, cmap='strandtest_rainbow')
             #rainbow(strip, iterations=1)
-            plot_colormap(strip, 'strandtest_rainbow')
+            #plot_colormap(strip, 'strandtest_rainbow')
+            #plot_color_array(strip)
             #plot_colormap(strip, 'jet')
             #plot_colormap(strip, 'plasma')
             #plot_colormap(strip, 'rainbow')
