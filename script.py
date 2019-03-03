@@ -1,4 +1,5 @@
 import time
+import asyncio
 import numpy as np
 from rpi_ws281x import Adafruit_NeoPixel
 
@@ -54,29 +55,37 @@ class LightningConfigurationMixin:
     def __init__(self):
         pass
 
+def ms2s(milisecond):
+    return milisecond / 1000
 
 class RandomLightsTurningOnAndFading:
-    def __init__(self, strip, cmap='strandtest_rainbow', shuffle_colors=False):
+    def __init__(self, loop, strip, cmap='strandtest_rainbow', shuffle_colors=False):
+        self.decrease_frequency = 50 # ms
+        self.turn_on_led_every = 200 # ms
         self.colors = color_array(cmap, LED_COUNT)
         self.strip = strip
         self.leds = create_rgb_array((LED_COUNT,))
-        lights2on = 1
-        count = 1
-        while True:
-            idx = random_led()
-            if shuffle_colors:
-                color = random_color(self.colors)
-            else:
-                color = self.colors[idx]
-            self.strip.setPixelColor(idx, color24bit(*color))
-            self.strip.show()
-            self.leds[idx] = color
-            if count == lights2on:
-                decrease_brightness(self.strip, self.leds, 0.90)
-                count = 1
-            else:
-                count += 1
-            sleep_ms(40)
+        self.loop = loop
+        self.shuffle_colors = shuffle_colors
+        self.loop.call_later(ms2s(self.decrease_frequency), self.decrease_brightness)
+        self.loop.call_later(ms2s(self.turn_on_led_every), self.turn_on_led)
+
+    def turn_on_led(self):
+        idx = random_led()
+        if self.shuffle_colors:
+            color = random_color(self.colors)
+        else:
+            color = self.colors[idx]
+        self.strip.setPixelColor(idx, color24bit(*color))
+        self.strip.show()
+        self.leds[idx] = color
+        self.loop.call_later(ms2s(self.turn_on_led_every), self.turn_on_led)
+
+    def decrease_brightness(self):
+        decrease_brightness(self.strip, self.leds, 0.90)
+        self.loop.call_later(ms2s(self.decrease_frequency), self.decrease_brightness)
+
+
 
 class PulseCycling:
     def __init__(self, strip, cmap='strandtest_rainbow'):
@@ -143,7 +152,6 @@ class Burst:
         self.fade_steps = fade_steps
 
 
-
 def plot_burst(strip):
     offset_c = 20
     colors = color_array('strandtest_rainbow', 60)[offset_c: offset_c + 21:4]
@@ -169,7 +177,6 @@ def plot_burst(strip):
             sleep_ms(50)
 
 
-
 if __name__ == '__main__':
     # Create NeoPixel object with appropriate configuration.
     strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
@@ -178,10 +185,16 @@ if __name__ == '__main__':
 
     print ('Press Ctrl-C to quit.')
     try:
+        loop = asyncio.get_event_loop()
+        RandomLightsTurningOnAndFading(loop, strip, cmap='strandtest_rainbow')
+
+        # Blocking call interrupted by loop.stop()
+        print('running forever now...')
+        loop.run_forever()
         while True:
             print ('Testing....')
             #plot_burst(strip)
-            RandomLightsTurningOnAndFading(strip, cmap='strandtest_rainbow')
+            #RandomLightsTurningOnAndFading(strip, cmap='strandtest_rainbow')
             #PulseCycling(strip, cmap='strandtest_rainbow')
             #rainbow(strip, iterations=1)
             #plot_colormap(strip, 'strandtest_rainbow')
@@ -192,3 +205,4 @@ if __name__ == '__main__':
             break
     except KeyboardInterrupt:
         clear(strip)
+        loop.close()
