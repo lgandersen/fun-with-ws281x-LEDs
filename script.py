@@ -1,19 +1,9 @@
-import random
 import time
 import numpy as np
 from rpi_ws281x import Adafruit_NeoPixel
 
 from config import LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL, CORD_LED
-from utils import color_array, create_rgb_array
-
-def random_led():
-    return random.randint(0, LED_COUNT - 1)
-
-
-def random_color(colors):
-    idx = random.randint(0, colors.shape[0] - 1)
-    return colors[idx]
-
+from utils import color_array, create_rgb_array, random_led, random_color
 
 def clear(strip):
     """Wipe color across display a pixel at a time."""

@@ -1,5 +1,16 @@
+import random
 from matplotlib.pyplot import get_cmap
 import numpy as np
+from config import LED_COUNT
+
+
+def random_led():
+    return random.randint(0, LED_COUNT - 1)
+
+
+def random_color(colors):
+    idx = random.randint(0, colors.shape[0] - 1)
+    return colors[idx]
 
 
 def color_array(cmap, length):
