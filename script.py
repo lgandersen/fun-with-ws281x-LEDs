@@ -96,21 +96,26 @@ class RandomLightsTurningOnAndFading(LEDConfigurationMixin):
         decrease_brightness(self, 0.90)
         self.call_later(self.decrease_frequency, self.decrease_brightness)
 
-
-class PulseCycling:
-    def __init__(self, strip, cmap='strandtest_rainbow'):
-        self.strip = strip
+class PulseCycling(LEDConfigurationMixin):
+    def __init__(self, cmap='strandtest_rainbow'):
+        super().__init__()
+        self.turn_on_frequency = 0
+        self.decrease_frequency = 10
         self.colors = color_array(cmap, LED_COUNT)
-        self.leds = create_rgb_array((LED_COUNT,))
-        idx = 0
-        while True:
-            color = self.colors[idx]
-            self.strip.setPixelColor(idx, color24bit(*color))
-            self.leds[idx] = color
-            strip.show()
-            idx = (idx + 1) % LED_COUNT
-            sleep_ms(20)
-            decrease_brightness(self.strip, self.leds, 0.90)
+        self.idx = 0
+        self.call_later(self.decrease_frequency, self.decrease_brightness)
+        self.call_later(self.turn_on_frequency, self.turn_on_next_led)
+
+    def decrease_brightness(self):
+        decrease_brightness(self, 0.90)
+        self.call_later(self.decrease_frequency, self.decrease_brightness)
+
+    def turn_on_next_led(self):
+        self.set_color(self.idx, self.colors[self.idx])
+        self.leds[self.idx] = self.colors[self.idx]
+        self.idx = (self.idx + 1) % LED_COUNT
+        self.render()
+        self.call_later(self.turn_on_frequency, self.turn_on_next_led)
 
 
 def create_color_array(length, red_start, red_end, green_start, green_end, blue_start, blue_end):
@@ -190,7 +195,8 @@ def plot_burst(strip):
 if __name__ == '__main__':
     print ('Press Ctrl-C to quit.')
     try:
-        lightcfg = RandomLightsTurningOnAndFading(cmap='strandtest_rainbow')
+        #lightcfg = RandomLightsTurningOnAndFading(cmap='strandtest_rainbow')
+        lightcfg = PulseCycling(cmap='strandtest_rainbow')
 
         # Blocking call interrupted by loop.stop()
         print('running forever now...')
@@ -200,7 +206,7 @@ if __name__ == '__main__':
             print ('Testing....')
             #plot_burst(strip)
             #RandomLightsTurningOnAndFading(strip, cmap='strandtest_rainbow')
-            #PulseCycling(strip, cmap='strandtest_rainbow')
+            #PulseCycling(cmap='strandtest_rainbow')
             #rainbow(strip, iterations=1)
             #plot_colormap(strip, 'strandtest_rainbow')
             #plot_colormap(strip, 'jet')
