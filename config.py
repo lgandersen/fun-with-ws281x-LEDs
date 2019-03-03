@@ -9,9 +9,10 @@ LED_BRIGHTNESS = 255     # Set to 0 for darkest and 255 for brightest
 LED_INVERT     = False   # True to invert the signal (when using NPN transistor level shift)
 LED_CHANNEL    = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
 
-## NOTE THIS DIFFERS FROM strip/cord LEDs
-#            colorWipe(strip, color24bit(255, 0, 0))  # Red wipe (green with cord)
-#            colorWipe(strip, color24bit(0, 255, 0))  # Blue wipe
-#            colorWipe(strip, color24bit(0, 0, 255))  # Green wipe (red with cord)
+## NOTE Different color encoding with strip/cord LEDs
+# (255, 0, 0) Red wipe (green with cord)
+# (0, 255, 0) Blue wipe
+# (0, 0, 255) Green wipe (red with cord)
+# Use setting below to denote which type of LED-device is being used.
 #CORD_LED = False
 CORD_LED = True

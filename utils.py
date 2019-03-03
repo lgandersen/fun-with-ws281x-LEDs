@@ -3,16 +3,16 @@ import numpy as np
 
 
 def color_array(cmap, length):
-    color_array = np.zeros((length, 3), dtype='int')
+    color_array = create_rgb_array((length,)) #np.zeros((length, 3), dtype=rgb_type)
     if cmap == 'strandtest_rainbow':
         pos = np.linspace(0, 255, length, dtype='int')
         for idx in range(len(pos)):
-            color_array[idx, :] = _rainbow(pos[idx])
+            color_array[idx] = _rainbow(pos[idx])
     else:
         cmap = get_cmap(cmap, length)
         for n in range(length):
             r, g, b, _ = cmap(n)
-            color_array[n, :] = float2int(r, g, b)
+            color_array[n] = float2int(r, g, b)
     return color_array
 
 
@@ -33,3 +33,13 @@ def _rainbow(pos):
     else:
         pos -= 170
         return (0, pos * 3, 255 - pos * 3)
+
+
+rgb_type = np.dtype([('red', 'uint32'), ('green', 'uint32'), ('blue', 'uint32')])
+
+def create_rgb_array(shape):
+    if isinstance(shape, int):
+        array = np.zeros((shape,), dtype=rgb_type)
+    else:
+        array = np.zeros(shape, dtype=rgb_type)
+    return array.view(np.recarray)
