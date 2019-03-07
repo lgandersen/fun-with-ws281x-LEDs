@@ -1,9 +1,11 @@
 import time
 import random
+from collections import namedtuple
 from matplotlib.pyplot import get_cmap
 import numpy as np
 from config import LED_COUNT
 
+RGB = namedtuple('RGB', ['r', 'g', 'b'])
 
 rgb_type = np.dtype([('red', 'int'), ('green', 'int'), ('blue', 'int')])
 

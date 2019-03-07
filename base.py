@@ -17,7 +17,9 @@ def color24bit(red, green, blue):
 
 
 class LEDConfigurationBase:
-    def __init__(self):
+    def __init__(self, config):
+        for option, value in config.items():
+            setattr(self, option, value)
         # Create NeoPixel object with appropriate configuration.
         self.strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
         # Intialize the library (must be called once before other functions).
@@ -60,4 +62,4 @@ class LEDConfigurationBase:
             if lights2correct[n]:
                 self.set_color(n, leds[n])
         self.render()
-        self.call_later(self.decrease_frequency, self.converge_to_basecolor, base_color, fade_rate)
+        self.call_later(self.fade_freq, self.converge_to_basecolor, base_color, fade_rate)
