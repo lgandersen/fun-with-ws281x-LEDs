@@ -1,7 +1,6 @@
 import time
 import random
 from collections import namedtuple
-from matplotlib.pyplot import get_cmap
 import numpy as np
 from config import LED_COUNT
 
@@ -48,6 +47,7 @@ def create_color_array(cmap, length):
 
     # Otherwise, assume it is a string naming a Matplotlib cmap
     else:
+        from matplotlib.pyplot import get_cmap
         cmap = get_cmap(cmap, length)
         for n in range(length):
             r, g, b, _ = cmap(n)

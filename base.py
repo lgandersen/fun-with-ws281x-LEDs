@@ -26,11 +26,17 @@ class LEDConfigurationBase:
         self.strip.begin()
         self.leds = create_rgb_array((LED_COUNT,))
         self.loop = asyncio.get_event_loop()
+        self._stop = False
+
+    def stop(self):
+        self._stop = True
 
     def render(self):
         self.strip.show()
 
     def call_later(self, delay_ms, callback, *args):
+        if self._stop:
+            return
         self.loop.call_later(delay_ms / 1000, callback, *args) # convert to second
 
     def set_color(self, idx, color):
@@ -51,7 +57,7 @@ class LEDConfigurationBase:
             self.set_color(i, off)
         self.strip.show()
 
-    def converge_to_basecolor(self, base_color, fade_rate):
+    def fade_to_basecolor(self, base_color, fade_rate):
         red, green, blue = base_color
         leds = self.leds
         lights2correct = (leds.red != red) | (leds.blue != blue) | (leds.green != green)
@@ -62,4 +68,7 @@ class LEDConfigurationBase:
             if lights2correct[n]:
                 self.set_color(n, leds[n])
         self.render()
-        self.call_later(self.fade_freq, self.converge_to_basecolor, base_color, fade_rate)
+        self.call_later(self.fade_freq, self.fade_to_basecolor, base_color, fade_rate)
+
+    def __del__(self):
+        print("I'm fading, Dave.")
