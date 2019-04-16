@@ -34,16 +34,28 @@ class RandomLightsTurningOnAndFading(LEDConfigurationBase):
 
 
 class RollColoring(LEDConfigurationBase):
+    rolling_weights = None
+    roll_base_color = None
+    roll_step = None
+    roll_freq = None
+
     def __init__(self, *args):
         super().__init__(*args)
         self.draw_and_roll()
 
     def draw_and_roll(self):
-        for n in range(LED_COUNT - 1):
-            self.set_color(n, self.rolling_colors[n])
-        self.render()
-        self.rolling_colors = np.roll(self.rolling_colors, self.roll_step)
+        colors = self.roll_base_color.copy()
+        weights = self.rolling_weights
+        colors.red = np.round(colors.red * weights['red'])
+        colors.green = np.round(colors.green * weights['green'])
+        colors.blue = np.round(colors.blue * weights['blue'])
+        self.set_color_all(colors)
+        self._roll_weights()
         self.call_later(self.roll_freq, self.draw_and_roll)
+
+    def _roll_weights(self):
+        for key, val in self.rolling_weights.items():
+            self.rolling_weights[key] = np.roll(val, self.roll_step)
 
 
 class PulseCycling(LEDConfigurationBase):
@@ -64,7 +76,8 @@ class PulseCycling(LEDConfigurationBase):
 class ColorBursts(LEDConfigurationBase):
     def __init__(self, *args):
         super().__init__(*args)
-        self.set_color_all(self.base_color)
+        colors = create_color_array(self.base_color, LED_COUNT)
+        self.set_color_all(colors)
         self.create_burst()
         self.call_later(self.fade_freq, self.fade_to_basecolor, self.base_color, self.fade_rate)
 
@@ -76,3 +89,11 @@ class ColorBursts(LEDConfigurationBase):
             count += 1
         self.render()
         self.call_later(self.burst_freq, self.create_burst)
+
+
+class TurnOnAllOnce(LEDConfigurationBase):
+    def __init__(self, *args):
+        super().__init__(*args)
+        for n in range(LED_COUNT - 1):
+            self.set_color(n, (0, 0, 255))
+        self.render()

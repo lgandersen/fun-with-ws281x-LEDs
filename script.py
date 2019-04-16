@@ -2,7 +2,7 @@ import asyncio
 
 import numpy as np
 
-from playbooks import RandomLightsTurningOnAndFading, PulseCycling, ColorBursts, RollColoring
+from playbooks import RandomLightsTurningOnAndFading, PulseCycling, ColorBursts, RollColoring, TurnOnAllOnce
 from utils import RGB, create_color_array, LED_COUNT, sleep_ms
 
 def create_burst_coloring():
@@ -11,29 +11,33 @@ def create_burst_coloring():
     return np.hstack([colors, colors[-2:0:-1]])
 
 
-def create_rolling_array():
-    colors = create_color_array(RGB(r=0, g=250, b=0), LED_COUNT)
-    #periods = 1
-    #weights = (0.5 * np.sin(np.linspace(0, periods * 2 * np.pi, LED_COUNT)) + 0.5) ** 2
-    #weights = 0.5 * np.sin(np.linspace(0, periods * 2 * np.pi, LED_COUNT)) + 0.5
-    #weights = 0.95 * self.weights + 0.05
-    #weights = np.abs(np.linspace(-1, 1, LED_COUNT))
-    #weights[self.weights < 0.1] = 0
-    weights = (np.linspace(-1, 1, LED_COUNT) ** 2) #* 0.99 + 0.01
-    #colors.red = 255 - np.round(colors.green * self.weights)
-    colors.red = np.round(colors.red * weights)
-    colors.green = np.round(colors.green * weights)
-    colors.blue = np.round(colors.blue * weights)
-    return colors
+def create_rolling_weights(periods=1, desync_red=True, desync_blue=True):
+    if periods > 1:
+        weights = 1 - (0.5 * np.sin(np.linspace(0, periods * 2 * np.pi, LED_COUNT)) + 0.5)
+    else:
+        weights = np.linspace(-1, 1, LED_COUNT) ** 2
+    weights_rgb = dict()
+    weights_rgb['green'] = weights
+    weights_rgb['red'] = weights
+    weights_rgb['blue'] = weights
+
+    if desync_red:
+        weights_rgb['red'] = np.roll(weights, round(LED_COUNT * (1 / 3)))
+
+    if desync_blue:
+        weights_rgb['blue'] = np.roll(weights, round(LED_COUNT * (2 / 3)))
+
+    return weights_rgb
 
 class CycleWorkbooks:
     def __init__(self, config):
         self.switch_rate = 60
         self.workbooks = [
                 PulseCycling,
-                ColorBursts,
-                RandomLightsTurningOnAndFading,
-                RollColoring,
+                #ColorBursts,
+                #RandomLightsTurningOnAndFading,
+                #RollColoring,
+                #TurnOnAllOnce
                 ]
         self.config = config
         self.workbook_idx = 0
@@ -61,10 +65,10 @@ if __name__ == '__main__':
             'shuffle_colors':True,
             'cmap':'strandtest_rainbow',
             'base_color':RGB(r=0, g=0, b=0),
-            'fade_rate':0.10,
-            'fade_freq':20, # [ms]
+            'fade_rate':0.15,
+            'fade_freq':50, # [ms]
             'turn_on_freq':10, #[ms]
-            'offsets':[0, 50, 100], # Used by PulseCycling
+            'offsets':[0, 50, 100, 150, 200, 250, 300, 350, 400, 450], # Used by PulseCycling
 
             # ColorBursts only
             'burst_freq':1000,                         # Frequency of creating new bursts
@@ -75,8 +79,9 @@ if __name__ == '__main__':
             'pixel_width':1,     # Used by RandomLightsTurningOnAndFading. Denotes the width of LEDs that is turned on at random. If 'random_width' i set this is not used.
 
             # RollColoring only
-            'rolling_colors':create_rolling_array(), # Array to use for rolling
-            'roll_freq':1,                           # Update frequency of the rolling array
+            'roll_base_color':create_color_array('strandtest_rainbow', LED_COUNT),
+            'rolling_weights':create_rolling_weights(periods=5, desync_blue=True, desync_red=True), # Array to use for rolling
+            'roll_freq':50,                           # Update frequency of the rolling array
             'roll_step':1,                           # Size of increment in array a each array-roll
                 }
         cwbs = CycleWorkbooks(config)

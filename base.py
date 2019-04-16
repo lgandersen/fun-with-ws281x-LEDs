@@ -2,7 +2,7 @@ import asyncio
 from rpi_ws281x import Adafruit_NeoPixel
 
 from config import LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL, CORD_LED
-from utils import create_color_array, create_rgb_array
+from utils import create_rgb_array, create_color_array
 
 
 def color24bit(red, green, blue):
@@ -24,8 +24,8 @@ class LEDConfigurationBase:
         self.strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
         # Intialize the library (must be called once before other functions).
         self.strip.begin()
-        self.leds = create_rgb_array((LED_COUNT,))
-        self.loop = asyncio.get_event_loop()
+        self._leds = create_rgb_array((LED_COUNT,))
+        self._loop = asyncio.get_event_loop()
         self._stop = False
 
     def stop(self):
@@ -37,15 +37,17 @@ class LEDConfigurationBase:
     def call_later(self, delay_ms, callback, *args):
         if self._stop:
             return
-        self.loop.call_later(delay_ms / 1000, callback, *args) # convert to second
+        self._loop.call_later(delay_ms / 1000, callback, *args) # convert to second
 
     def set_color(self, idx, color):
         color24b = color24bit(*color)
-        self.leds[idx] = color
+        self._leds[idx] = color
         self.strip.setPixelColor(idx, color24b)
 
-    def set_color_all(self, cmap):
-        colors = create_color_array(cmap, LED_COUNT)
+    def set_color_all(self, colors):
+        if isinstance(colors, tuple) and len(colors) == 3:
+            colors = create_color_array(colors, LED_COUNT)
+
         for n in range(LED_COUNT - 1):
             self.set_color(n, colors[n])
         self.render()
@@ -59,7 +61,7 @@ class LEDConfigurationBase:
 
     def fade_to_basecolor(self, base_color, fade_rate):
         red, green, blue = base_color
-        leds = self.leds
+        leds = self._leds
         lights2correct = (leds.red != red) | (leds.blue != blue) | (leds.green != green)
         leds.red = leds.red + (red - leds.red) * fade_rate
         leds.green = leds.green + (green - leds.green) * fade_rate
