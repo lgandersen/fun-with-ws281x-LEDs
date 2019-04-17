@@ -31,14 +31,15 @@ def create_rolling_weights(periods=1, desync_red=True, desync_blue=True):
 
 class CycleWorkbooks:
     def __init__(self, config):
-        self.switch_rate = 60
+        self.switch_rate = 90
         self.workbooks = [
                 PulseCycling,
-                #ColorBursts,
-                #RandomLightsTurningOnAndFading,
-                #RollColoring,
-                #TurnOnAllOnce
+                ColorBursts,
+                RandomLightsTurningOnAndFading,
+                RollColoring,
+                TurnOnAllOnce
                 ]
+        self.workbooks = [self.workbooks[0]] #While debugging
         self.config = config
         self.workbook_idx = 0
         self.present_workbook = None
@@ -63,25 +64,27 @@ if __name__ == '__main__':
     try:
         config = {
             'shuffle_colors':True,
-            'cmap':'strandtest_rainbow',
-            'base_color':RGB(r=0, g=0, b=0),
-            'fade_rate':0.15,
-            'fade_freq':50, # [ms]
-            'turn_on_freq':10, #[ms]
-            'offsets':[0, 50, 100, 150, 200, 250, 300, 350, 400, 450], # Used by PulseCycling
+            #'cmap':'strandtest_rainbow',
+            'cmap':'prism',
+            'base_color':create_color_array(RGB(r=0, g=0, b=0), LED_COUNT),
+            'fade_rate':0.10,
+            'fade_freq':10, # [ms]
+            'turn_on_freq':0, #[ms]
+            'offsets':[0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 420, 450], # Used by PulseCycling
 
             # ColorBursts only
             'burst_freq':1000,                         # Frequency of creating new bursts
             'burst_coloring':create_burst_coloring(), # Burst coloring array
 
             # RandomLightsTurningOnAndFading only
-            'random_width':(1, 5), # Used by RandomLightsTurningOnAndFading. Can be a range (start, end) of possible widths
+            'random_width':(10, 15), # Used by RandomLightsTurningOnAndFading. Can be a range (start, end) of possible widths
             'pixel_width':1,     # Used by RandomLightsTurningOnAndFading. Denotes the width of LEDs that is turned on at random. If 'random_width' i set this is not used.
 
             # RollColoring only
-            'roll_base_color':create_color_array('strandtest_rainbow', LED_COUNT),
+            #'roll_base_color':create_color_array('strandtest_rainbow', LED_COUNT),
+            'roll_base_color':create_color_array('prism', LED_COUNT),
             'rolling_weights':create_rolling_weights(periods=5, desync_blue=True, desync_red=True), # Array to use for rolling
-            'roll_freq':50,                           # Update frequency of the rolling array
+            'roll_freq':1,                           # Update frequency of the rolling array
             'roll_step':1,                           # Size of increment in array a each array-roll
                 }
         cwbs = CycleWorkbooks(config)
@@ -90,5 +93,4 @@ if __name__ == '__main__':
         # Blocking call interrupted by loop.stop()
         print('running forever now...')
     except KeyboardInterrupt:
-        cwbs.present_workbook.clear()
         cwbs.loop.close()

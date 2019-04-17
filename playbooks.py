@@ -3,17 +3,19 @@ import random
 import numpy as np
 
 from config import LED_COUNT
-from utils import create_color_array, random_led, random_color
-from base import LEDConfigurationBase
+from utils import create_color_array, random_led, random_color, create_rgb_array
+from base import LEDConfigurationBase, fade_to_base_coloring
+from strip import set_colors_all, set_colors
 
 
 class RandomLightsTurningOnAndFading(LEDConfigurationBase):
     def __init__(self, *args):
         super().__init__(*args)
-        self.colors = create_color_array(self.cmap, LED_COUNT)
-        self.set_color_all(self.base_color)
+        self.palette = create_color_array(self.cmap, LED_COUNT)
+        self.coloring = self.base_color.copy()
+        set_colors_all(self.base_color)
         self.turn_on_led()
-        self.fade_to_basecolor(self.base_color, self.fade_rate)
+        self.fade_colors()
 
     def turn_on_led(self):
         if self.random_width is not None:
@@ -23,22 +25,25 @@ class RandomLightsTurningOnAndFading(LEDConfigurationBase):
 
         idx = random_led()
         if self.shuffle_colors:
-            color = random_color(self.colors)
+            color = random_color(self.palette)
         else:
-            color = self.colors[idx]
-        for n in range(idx, idx + width):
-            if n < LED_COUNT:
-                self.set_color(n, color)
-        self.render()
+            color = self.palette[idx]
+
+
+        color_spot = create_color_array((color.red, color.green, color.blue), width)
+        idx = np.arange(idx, idx + width)
+        self.coloring[idx] = color_spot
+
+        set_colors(idx, color_spot)
         self.call_later(self.turn_on_freq, self.turn_on_led)
+
+    def fade_colors(self):
+        self.coloring = fade_to_base_coloring(self.base_color, self.coloring, self.fade_rate)
+        set_colors_all(self.coloring)
+        self.call_later(self.fade_freq, self.fade_colors)
 
 
 class RollColoring(LEDConfigurationBase):
-    rolling_weights = None
-    roll_base_color = None
-    roll_step = None
-    roll_freq = None
-
     def __init__(self, *args):
         super().__init__(*args)
         self.draw_and_roll()
@@ -49,51 +54,57 @@ class RollColoring(LEDConfigurationBase):
         colors.red = np.round(colors.red * weights['red'])
         colors.green = np.round(colors.green * weights['green'])
         colors.blue = np.round(colors.blue * weights['blue'])
-        self.set_color_all(colors)
-        self._roll_weights()
-        self.call_later(self.roll_freq, self.draw_and_roll)
+        set_colors_all(colors)
 
-    def _roll_weights(self):
-        for key, val in self.rolling_weights.items():
-            self.rolling_weights[key] = np.roll(val, self.roll_step)
+        for chan, val in weights.items():
+            self.rolling_weights[chan] = np.roll(val, self.roll_step)
+
+        self.call_later(self.roll_freq, self.draw_and_roll)
 
 
 class PulseCycling(LEDConfigurationBase):
     def __init__(self, *args):
         super().__init__(*args)
-        self.colors = create_color_array(self.cmap, LED_COUNT)
-        self.call_later(self.fade_freq, self.fade_to_basecolor, self.base_color, self.fade_rate)
+        self.offsets = np.array(self.offsets, dtype='int')
+        self.pulse_colors = create_color_array(self.cmap, LED_COUNT)
+        self.coloring = create_rgb_array((LED_COUNT, ))
+        self.call_later(self.fade_freq, self.fade_colors)
         self.call_later(self.turn_on_freq, self.turn_on_next_led)
 
     def turn_on_next_led(self):
-        for n, idx in enumerate(self.offsets):
-            self.set_color(idx, self.colors[idx])
-            self.offsets[n] = (idx + 1) % LED_COUNT
-        self.render()
+        self.offsets = (self.offsets + 1) % LED_COUNT
+        self.coloring[self.offsets] = self.pulse_colors[self.offsets]
+        set_colors(self.offsets, self.pulse_colors[self.offsets])
         self.call_later(self.turn_on_freq, self.turn_on_next_led)
+
+    def fade_colors(self):
+        self.coloring = fade_to_base_coloring(self.base_color, self.coloring, self.fade_rate)
+        set_colors_all(self.coloring)
+        self.call_later(self.fade_freq, self.fade_colors)
 
 
 class ColorBursts(LEDConfigurationBase):
     def __init__(self, *args):
         super().__init__(*args)
-        colors = create_color_array(self.base_color, LED_COUNT)
-        self.set_color_all(colors)
+        self.coloring = self.base_color.copy()
+        set_colors_all(self.coloring)
         self.create_burst()
-        self.call_later(self.fade_freq, self.fade_to_basecolor, self.base_color, self.fade_rate)
+        self.call_later(self.fade_freq, self.fade_colors)
 
     def create_burst(self):
         self.offset = random.randint(self.burst_coloring.shape[0], LED_COUNT - self.burst_coloring.shape[0])
-        count = 0
-        for idx in range(self.offset, self.offset + self.burst_coloring.shape[0]):
-            self.set_color(idx, self.burst_coloring[count])
-            count += 1
-        self.render()
+        self.coloring[self.offset: self.offset + self.burst_coloring.shape[0]] = self.burst_coloring
+        set_colors_all(self.coloring)
         self.call_later(self.burst_freq, self.create_burst)
+
+    def fade_colors(self):
+        self.coloring = fade_to_base_coloring(self.base_color, self.coloring, self.fade_rate)
+        set_colors_all(self.coloring)
+        self.call_later(self.fade_freq, self.fade_colors)
 
 
 class TurnOnAllOnce(LEDConfigurationBase):
     def __init__(self, *args):
         super().__init__(*args)
-        for n in range(LED_COUNT - 1):
-            self.set_color(n, (0, 0, 255))
-        self.render()
+        colors = create_color_array((0, 0, 255), LED_COUNT)
+        set_colors_all(colors)
