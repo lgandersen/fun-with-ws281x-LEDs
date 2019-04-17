@@ -1,6 +1,6 @@
 import numpy as np
 from rpi_ws281x import Adafruit_NeoPixel
-from config import LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL, CORD_LED
+from config import LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL, WS2811
 from utils import create_rgb_array
 
 
@@ -16,7 +16,7 @@ def _color24bit_all(colors):
     Each color component should be a value 0-255 where 0 is the lowest intensity
     and 255 is the highest intensity.
     """
-    if CORD_LED:
+    if WS2811:
         color24b[:] = np.left_shift(colors.green, shift16) | np.left_shift(colors.red, shift8) | colors.blue
     else:
         color24b[:] = np.left_shift(colors.red, shift16) | np.left_shift(colors.green, shift8) | colors.blue
@@ -31,7 +31,7 @@ def _color24bit(colors):
     shift16 = np.zeros(colors.shape, dtype='int') + 16
     shift8 = np.zeros(colors.shape, dtype='int') + 8
     color24b = np.zeros(colors.shape, dtype='int')
-    if CORD_LED:
+    if WS2811:
         color24b[:] = np.left_shift(colors.green, shift16) | np.left_shift(colors.red, shift8) | colors.blue
     else:
         color24b[:] = np.left_shift(colors.red, shift16) | np.left_shift(colors.green, shift8) | colors.blue

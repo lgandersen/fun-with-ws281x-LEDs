@@ -1,10 +1,12 @@
 import asyncio
 #from rpi_ws281x import Adafruit_NeoPixel
 
-from strip import clear_all
+from strip import clear_all, set_colors_all
+from utils import create_color_array, RGB
+from config import LED_COUNT
 
 
-def fade_to_base_coloring(base_coloring, present_coloring, fade_rate):
+def fade_to_frame(base_coloring, present_coloring, fade_rate):
     red, green, blue = base_coloring.red, base_coloring.green, base_coloring.blue
 
     leds = present_coloring
@@ -14,9 +16,9 @@ def fade_to_base_coloring(base_coloring, present_coloring, fade_rate):
     return leds
 
 class LEDConfigurationBase:
-    def __init__(self, config):
-        for option, value in config.items():
-            setattr(self, option, value)
+    frame = create_color_array(RGB(r=0, g=0, b=0), LED_COUNT)
+
+    def __init__(self):
         self._loop = asyncio.get_event_loop()
         self._stop = False
 
@@ -27,6 +29,9 @@ class LEDConfigurationBase:
         if self._stop:
             return
         self._loop.call_later(delay_ms / 1000, callback, *args) # convert to second
+
+    def draw_frame(self):
+        set_colors_all(self.frame)
 
     def __del__(self):
         clear_all()

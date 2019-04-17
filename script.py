@@ -2,45 +2,66 @@ import asyncio
 
 import numpy as np
 
-from playbooks import RandomLightsTurningOnAndFading, PulseCycling, ColorBursts, RollColoring, TurnOnAllOnce
-from utils import RGB, create_color_array, LED_COUNT, sleep_ms
+from playbooks import RandomLightsTurningOn, PulseCycling, RollingWeights, TurnOnAll
+from utils import create_color_array, sleep_ms
+from config import LED_COUNT
 
-def create_burst_coloring():
-    offset_c = 30
-    colors = create_color_array('strandtest_rainbow', 60)[offset_c: offset_c + 21:5]
-    return np.hstack([colors, colors[-2:0:-1]])
+from utils import create_burst_coloring, create_rolling_weights, RGB
+
+random_lights_turning_on = {
+        'shuffle':True,
+        'palettes':create_color_array('strandtest_rainbow', LED_COUNT),
+        'random_width':(5, 10), # Tuple (start, end) of random sampled widths (start == end implies fixed width)
+        'fading_frame':create_color_array(RGB(r=0, g=0, b=0), LED_COUNT),
+        'fade_rate':0.50,
+        'fade_freq':10, # [ms]
+        'turn_on_freq':0, #[ms]
+        }
+
+color_burst = {
+        'shuffle':False,
+        'palettes':[create_burst_coloring()],
+        'random_width':(1, 1), # Tuple (start, end) of random sampled widths (start == end implies fixed width)
+        'fading_frame':create_color_array(RGB(r=0, g=0, b=0), LED_COUNT),
+        'fade_rate':0.50,
+        'fade_freq':10, # [ms]
+        'turn_on_freq':0, #[ms]
+        }
 
 
-def create_rolling_weights(periods=1, desync_red=True, desync_blue=True):
-    if periods > 1:
-        weights = 1 - (0.5 * np.sin(np.linspace(0, periods * 2 * np.pi, LED_COUNT)) + 0.5)
-    else:
-        weights = np.linspace(-1, 1, LED_COUNT) ** 2
-    weights_rgb = dict()
-    weights_rgb['green'] = weights
-    weights_rgb['red'] = weights
-    weights_rgb['blue'] = weights
+rolling_weights = {
+        'base_frame':create_color_array('prism', LED_COUNT),
+        'weights':create_rolling_weights(periods=5, desync_blue=True, desync_red=True), # Array to use for rolling
+        'roll_step':1, # Size of increment in array a each array-roll
+        'roll_freq':1, # Update frequency of the rolling array
+        }
 
-    if desync_red:
-        weights_rgb['red'] = np.roll(weights, round(LED_COUNT * (1 / 3)))
 
-    if desync_blue:
-        weights_rgb['blue'] = np.roll(weights, round(LED_COUNT * (2 / 3)))
+pulsating_lights = {
+        'base_frame':create_color_array('strandtest_rainbow', LED_COUNT),
+        'offsets':np.arange(0, LED_COUNT, 25), # offsets (and number) of pulses
+        'fading_frame':create_color_array(RGB(r=0, g=0, b=0), LED_COUNT),
+        'fade_rate':0.50,
+        'fade_freq':10, # [ms]
+        'turn_on_freq':0, #[ms]
+        }
 
-    return weights_rgb
+turn_on_all = {
+        'color':(0, 0, 255)
+        }
+
 
 class CycleWorkbooks:
-    def __init__(self, config):
-        self.switch_rate = 90
+    def __init__(self):
+        self.switch_rate = 30
         self.workbooks = [
-                PulseCycling,
-                ColorBursts,
-                RandomLightsTurningOnAndFading,
-                RollColoring,
-                TurnOnAllOnce
+                (PulseCycling, pulsating_lights),
+                (RandomLightsTurningOn, color_burst),
+                (RandomLightsTurningOn, random_lights_turning_on),
+                (RollingWeights, rolling_weights),
+                (TurnOnAll, turn_on_all)
                 ]
-        self.workbooks = [self.workbooks[0]] #While debugging
-        self.config = config
+        #self.workbooks = [self.workbooks[0]] #While debugging
         self.workbook_idx = 0
         self.present_workbook = None
         self.loop = asyncio.get_event_loop()
@@ -53,8 +74,9 @@ class CycleWorkbooks:
         if self.present_workbook is not None:
             self.present_workbook.stop()
             sleep_ms(2000)
-        print('Changing to workbook ', self.workbook_idx, self.workbooks[self.workbook_idx])
-        self.present_workbook = self.workbooks[self.workbook_idx](self.config)
+        print('Changing to workbook ', self.workbook_idx, self.workbooks[self.workbook_idx][0])
+        workbook, cfg = self.workbooks[self.workbook_idx]
+        self.present_workbook = workbook(**cfg)
         self.workbook_idx = (self.workbook_idx + 1) % len(self.workbooks)
         self.loop.call_later(self.switch_rate, self.change_workbook)
 
@@ -62,32 +84,7 @@ class CycleWorkbooks:
 if __name__ == '__main__':
     print ('Press Ctrl-C to quit.')
     try:
-        config = {
-            'shuffle_colors':True,
-            #'cmap':'strandtest_rainbow',
-            'cmap':'prism',
-            'base_color':create_color_array(RGB(r=0, g=0, b=0), LED_COUNT),
-            'fade_rate':0.10,
-            'fade_freq':10, # [ms]
-            'turn_on_freq':0, #[ms]
-            'offsets':[0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 420, 450], # Used by PulseCycling
-
-            # ColorBursts only
-            'burst_freq':1000,                         # Frequency of creating new bursts
-            'burst_coloring':create_burst_coloring(), # Burst coloring array
-
-            # RandomLightsTurningOnAndFading only
-            'random_width':(10, 15), # Used by RandomLightsTurningOnAndFading. Can be a range (start, end) of possible widths
-            'pixel_width':1,     # Used by RandomLightsTurningOnAndFading. Denotes the width of LEDs that is turned on at random. If 'random_width' i set this is not used.
-
-            # RollColoring only
-            #'roll_base_color':create_color_array('strandtest_rainbow', LED_COUNT),
-            'roll_base_color':create_color_array('prism', LED_COUNT),
-            'rolling_weights':create_rolling_weights(periods=5, desync_blue=True, desync_red=True), # Array to use for rolling
-            'roll_freq':1,                           # Update frequency of the rolling array
-            'roll_step':1,                           # Size of increment in array a each array-roll
-                }
-        cwbs = CycleWorkbooks(config)
+        cwbs = CycleWorkbooks()
         cwbs.start()
 
         # Blocking call interrupted by loop.stop()

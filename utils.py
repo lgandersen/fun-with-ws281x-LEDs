@@ -2,6 +2,7 @@ import time
 import random
 from collections import namedtuple
 import numpy as np
+
 from config import LED_COUNT
 
 RGB = namedtuple('RGB', ['r', 'g', 'b'])
@@ -19,10 +20,6 @@ def create_rgb_array(shape):
 
 def sleep_ms(ms):
     time.sleep(ms/1000.0)
-
-
-def random_led():
-    return random.randint(0, LED_COUNT - 1)
 
 
 def random_color(colors):
@@ -53,6 +50,31 @@ def create_color_array(cmap, length):
             r, g, b, _ = cmap(n)
             color_array[n] = _float2int(r, g, b)
     return color_array
+
+
+def create_burst_coloring():
+    offset_c = 30
+    colors = create_color_array('strandtest_rainbow', 60)[offset_c: offset_c + 21:5]
+    return np.hstack([colors, colors[-2:0:-1]])
+
+
+def create_rolling_weights(periods=1, desync_red=True, desync_blue=True):
+    if periods > 1:
+        weights = 1 - (0.5 * np.sin(np.linspace(0, periods * 2 * np.pi, LED_COUNT)) + 0.5)
+    else:
+        weights = np.linspace(-1, 1, LED_COUNT) ** 2
+    weights_rgb = dict()
+    weights_rgb['green'] = weights
+    weights_rgb['red'] = weights
+    weights_rgb['blue'] = weights
+
+    if desync_red:
+        weights_rgb['red'] = np.roll(weights, round(LED_COUNT * (1 / 3)))
+
+    if desync_blue:
+        weights_rgb['blue'] = np.roll(weights, round(LED_COUNT * (2 / 3)))
+
+    return weights_rgb
 
 
 def create_color_gradient_array(length, red_start, red_end, green_start, green_end, blue_start, blue_end):
