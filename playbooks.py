@@ -109,4 +109,5 @@ class TurnOnAll(LEDConfigurationBase):
     def __init__(self, color):
         super().__init__()
         self.frame = create_color_array(color, LED_COUNT)
+        print(self.frame)
         self.draw_frame()

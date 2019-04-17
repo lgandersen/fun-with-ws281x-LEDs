@@ -1,9 +1,8 @@
-import asyncio
-
 import numpy as np
 
-from playbooks import RandomLightsTurningOn, PulseCycling, RollingWeights, TurnOnAll
-from utils import create_color_array, sleep_ms
+from playbooks import RandomLightsTurningOn, PulseCycling, RollingWeights#, TurnOnAll
+from player import Player
+from utils import create_color_array
 from config import LED_COUNT
 
 from utils import create_burst_coloring, create_rolling_weights, RGB
@@ -50,41 +49,21 @@ turn_on_all = {
         'color':(0, 0, 255)
         }
 
-
-class CycleWorkbooks:
-    def __init__(self):
-        self.switch_rate = 30
-        self.workbooks = [
-                (PulseCycling, pulsating_lights),
-                (RandomLightsTurningOn, color_burst),
-                (RandomLightsTurningOn, random_lights_turning_on),
-                (RollingWeights, rolling_weights),
-                (TurnOnAll, turn_on_all)
-                ]
-        #self.workbooks = [self.workbooks[0]] #While debugging
-        self.workbook_idx = 0
-        self.present_workbook = None
-        self.loop = asyncio.get_event_loop()
-
-    def start(self):
-        self.change_workbook()
-        self.loop.run_forever()
-
-    def change_workbook(self):
-        if self.present_workbook is not None:
-            self.present_workbook.stop()
-            sleep_ms(2000)
-        print('Changing to workbook ', self.workbook_idx, self.workbooks[self.workbook_idx][0])
-        workbook, cfg = self.workbooks[self.workbook_idx]
-        self.present_workbook = workbook(**cfg)
-        self.workbook_idx = (self.workbook_idx + 1) % len(self.workbooks)
-        self.loop.call_later(self.switch_rate, self.change_workbook)
-
+workbooks = [
+    (PulseCycling, pulsating_lights),
+    (RandomLightsTurningOn, color_burst),
+    (RandomLightsTurningOn, random_lights_turning_on),
+    (RollingWeights, rolling_weights),
+    #(TurnOnAll, turn_on_all)
+    ]
 
 if __name__ == '__main__':
+    #workbooks = [workbooks[0]] #While debugging
+    from player import iter_pulse_cycling_configs
+    workbooks = [(PulseCycling, cfg) for cfg in iter_pulse_cycling_configs(20)]
     print ('Press Ctrl-C to quit.')
     try:
-        cwbs = CycleWorkbooks()
+        cwbs = Player(workbooks)
         cwbs.start()
 
         # Blocking call interrupted by loop.stop()
