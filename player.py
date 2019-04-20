@@ -53,7 +53,7 @@ def iter_pulse_cycling_configs(limit=999999):
 
 class Player:
     def __init__(self, workbooks):
-        self.switch_rate = 10
+        self.switch_rate = 100
         self.workbooks = workbooks
         self.workbook_idx = 0
         self.present_workbook = None

@@ -4,7 +4,7 @@ import numpy as np
 
 from config import LED_COUNT
 from utils import create_color_array, random_color
-from base import LEDConfigurationBase, fade_to_frame
+from base import LEDConfigurationBase, morph_frame
 
 
 class RandomLightsTurningOn(LEDConfigurationBase):
@@ -54,7 +54,7 @@ class RandomLightsTurningOn(LEDConfigurationBase):
         self.call_later(self.turn_on_freq, self.turn_on_led)
 
     def fade_colors(self):
-        self.frame = fade_to_frame(self.fading_frame, self.frame, self.fade_rate)
+        self.frame = morph_frame(self.fading_frame, self.frame, self.fade_rate)
         self.draw_frame()
         self.call_later(self.fade_freq, self.fade_colors)
 
@@ -100,7 +100,7 @@ class PulseCycling(LEDConfigurationBase):
         self.call_later(self.turn_on_freq, self.turn_on_next_led)
 
     def fade_colors(self):
-        self.frame = fade_to_frame(self.fading_frame, self.frame, self.fade_rate)
+        self.frame = morph_frame(self.fading_frame, self.frame, self.fade_rate)
         self.draw_frame()
         self.call_later(self.fade_freq, self.fade_colors)
 

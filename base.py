@@ -1,19 +1,17 @@
 import asyncio
-#from rpi_ws281x import Adafruit_NeoPixel
 
 from strip import clear_all, set_colors_all
 from utils import create_color_array, RGB
 from config import LED_COUNT
 
 
-def fade_to_frame(base_coloring, present_coloring, fade_rate):
-    red, green, blue = base_coloring.red, base_coloring.green, base_coloring.blue
+def morph_frame(base_frame, frame2morph, fade_rate):
+    red, green, blue = base_frame.red, base_frame.green, base_frame.blue
 
-    leds = present_coloring
-    leds.red = leds.red + (red - leds.red) * fade_rate
-    leds.green = leds.green + (green - leds.green) * fade_rate
-    leds.blue = leds.blue + (blue - leds.blue) * fade_rate
-    return leds
+    frame2morph.red = frame2morph.red + (red - frame2morph.red) * fade_rate
+    frame2morph.green = frame2morph.green + (green - frame2morph.green) * fade_rate
+    frame2morph.blue = frame2morph.blue + (blue - frame2morph.blue) * fade_rate
+    return frame2morph
 
 class LEDConfigurationBase:
     frame = create_color_array(RGB(r=0, g=0, b=0), LED_COUNT)
