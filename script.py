@@ -59,8 +59,8 @@ workbooks = [
 
 if __name__ == '__main__':
     #workbooks = [workbooks[0]] #While debugging
-    from player import iter_pulse_cycling_configs
-    workbooks = [(PulseCycling, cfg) for cfg in iter_pulse_cycling_configs(20)]
+    #from player import iter_pulse_cycling_configs
+    #workbooks = [(PulseCycling, cfg) for cfg in iter_pulse_cycling_configs(20)]
     print ('Press Ctrl-C to quit.')
     try:
         cwbs = Player(workbooks)
