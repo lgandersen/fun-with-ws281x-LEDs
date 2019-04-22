@@ -3,19 +3,20 @@ import random
 import numpy as np
 
 from config import LED_COUNT
-from utils import create_color_array, random_color
+from utils import random_color
+from colormap import create_colormap
 from base import LEDConfigurationBase, morph_frame
-
+# pylint: disable=no-member,attribute-defined-outside-init
 
 class RandomLightsTurningOn(LEDConfigurationBase):
     parameters = (
-            'shuffle',
-            'palettes',
-            'random_width',
-            'fading_frame',
-            'fade_rate',
-            'turn_on_freq'
-            )
+        'shuffle',
+        'palettes',
+        'random_width',
+        'fading_frame',
+        'fade_rate',
+        'turn_on_freq'
+        )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -61,11 +62,11 @@ class RandomLightsTurningOn(LEDConfigurationBase):
 
 class RollingWeights(LEDConfigurationBase):
     parameters = (
-            'base_frame',
-            'weights',
-            'roll_step',
-            'roll_freq'
-            )
+        'base_frame',
+        'weights',
+        'roll_step',
+        'roll_freq'
+        )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -83,14 +84,33 @@ class RollingWeights(LEDConfigurationBase):
         self.create_task(self.draw_and_roll)
 
 
+class RollingPalette(LEDConfigurationBase):
+    parameters = (
+        'rolling_palette',
+        'roll_step',
+        'roll_freq'
+        )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.create_task(self.draw_and_roll)
+
+    async def draw_and_roll(self):
+        self.rolling_palette = np.roll(self.rolling_palette, self.roll_step)
+        self.frame[:] = self.rolling_palette[:LED_COUNT]
+        await self.sleep(self.roll_freq)
+        self.create_task(self.draw_and_roll)
+
+
 class PulseCycling(LEDConfigurationBase):
     parameters = (
-            'base_frame',
-            'offsets',
-            'fading_frame',
-            'fade_rate',
-            'turn_on_freq'
-            )
+        'base_frame',
+        'offsets',
+        'fading_frame',
+        'fade_rate',
+        'turn_on_freq',
+        'turn_on_at_once',
+        )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -98,8 +118,9 @@ class PulseCycling(LEDConfigurationBase):
         self.create_task(self.fade_colors)
 
     async def turn_on_next_led(self):
-        self.offsets = (self.offsets + 1) % LED_COUNT
-        self.frame[self.offsets] = self.base_frame[self.offsets]
+        for _ in range(self.turn_on_at_once):
+            self.offsets = (self.offsets + 1) % LED_COUNT
+            self.frame[self.offsets] = self.base_frame[self.offsets]
         await self.sleep(self.turn_on_freq)
         self.create_task(self.turn_on_next_led)
 
@@ -113,5 +134,5 @@ class TurnOnAll(LEDConfigurationBase):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.frame = create_color_array(self.color, LED_COUNT)
+        self.frame = create_colormap(self.color, LED_COUNT)
         self.draw_frame()

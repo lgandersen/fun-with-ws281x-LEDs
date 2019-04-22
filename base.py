@@ -1,7 +1,8 @@
 import asyncio
 
 from strip import clear_all, set_colors_all
-from utils import create_color_array, RGB
+from utils import RGB
+from colormap import create_colormap
 from config import LED_COUNT
 
 
@@ -14,7 +15,8 @@ def morph_frame(base_frame, frame2morph, fade_rate):
     return frame2morph
 
 class LEDConfigurationBase:
-    frame = create_color_array(RGB(r=0, g=0, b=0), LED_COUNT)
+    parameters = None
+    frame = create_colormap(RGB(r=0, g=0, b=0), LED_COUNT)
 
     def __init__(self, **kwargs):
         self.queue = kwargs['queue']

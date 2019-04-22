@@ -2,52 +2,72 @@ import asyncio
 from random import randint
 
 import numpy as np
+from numpy.random import choice as choose
 
 from config import LED_COUNT
-from utils import create_color_array, RGB
+from utils import RGB
 from strip import set_colors_all
+from colormap import create_colormap, create_colormap_slice
+
+
+def _choose_cmap_frame(frames_cmap):
+    return frames_cmap[choose(len(frames_cmap))]
+
+
+def _no_lights_or_random_cmap(frames_cmap, likelihood=2):
+    if randint(0, likelihood) == 0:
+        cmap = create_colormap(RGB(r=0, g=0, b=0), LED_COUNT)
+    else:
+        cmap = frames_cmap[choose(len(frames_cmap))]
+    return cmap
+
+
+def iter_random_lights_turning_on_configs(limit=99999):
+    frames_cmap = [
+        create_colormap('strandtest_rainbow', LED_COUNT),
+        create_colormap('prism', LED_COUNT),
+        create_colormap('jet', LED_COUNT),
+    ]
+    random_widths = [
+        (2, 2),
+        (1, 5),
+        (5, 10),
+        (5, 25)
+        ]
+    count = 0
+    while count < limit:
+        cfg = {
+            'shuffle':choose([True, False]),
+            'palettes':_choose_cmap_frame(frames_cmap),
+            'random_width':random_widths[choose(len(random_widths))],# Tuple (start, end) of random sampled widths (start == end implies fixed width)
+            'fading_frame':create_colormap(RGB(r=0, g=0, b=0), LED_COUNT),
+            'fade_rate':choose([0, 0.005, 0.01, 0.10]),
+            'turn_on_freq':choose([0, 0, 50, 100]),
+            }
+        yield cfg
+        count += 1
+
 
 def iter_pulse_cycling_configs(limit=999999):
     frames_cmap = [
-            create_color_array('strandtest_rainbow', LED_COUNT),
-            create_color_array('prism', LED_COUNT),
-            create_color_array('jet', LED_COUNT),
-            ]
-    frames_constant = [
-            create_color_array(tuple(color), LED_COUNT)
-            for color in create_color_array('strandtest_rainbow', 10)
-            ]
-
-    cfg_tmplate = {
-            'base_frame':create_color_array('strandtest_rainbow', LED_COUNT),
-            'offsets':np.arange(0, LED_COUNT, 25), # offsets (and number) of pulses
-            'fading_frame':create_color_array(RGB(r=0, g=0, b=0), LED_COUNT),
-            'fade_rate':0.50,
-            'fade_freq':10, # [ms]
-            'turn_on_freq':0, #[ms]
-            }
-
+        create_colormap('strandtest_rainbow', LED_COUNT),
+        create_colormap('prism', LED_COUNT),
+        create_colormap('jet', LED_COUNT),
+        ] + [
+        create_colormap(tuple(color), LED_COUNT)
+        for n, color in enumerate(create_colormap('strandtest_rainbow', 20))
+        if n % 2 == 0
+        ]
     count = 0
     while count < limit:
-        cfg = dict(cfg_tmplate)
-
-        if randint(0, 1) == 1:
-            cfg['fading_frame'] = frames_constant[randint(0, 9)]
-        else:
-            cfg['fading_frame'] = create_color_array(RGB(r=0, g=0, b=0), LED_COUNT)
-
-
-        cfg['base_frame'] = frames_cmap[randint(0, 2)]
-
-        offset_step = randint(20, 100)
-        cfg['offsets'] = np.arange(0, LED_COUNT, offset_step)
-
-        fade_rate = randint(1, 5)/10
-        cfg['fade_rate'] = fade_rate
-
-        cfg['turn_on_freq'] = randint(0, 500) * fade_rate
-
-
+        cfg = {
+            'fading_frame':_no_lights_or_random_cmap(frames_cmap),
+            'base_frame':frames_cmap[choose(len(frames_cmap))],
+            'offsets':np.arange(0, LED_COUNT, choose([25, 40, 75, 100])),
+            'fade_rate':choose([0.05, 0.01, 0.05, 0.10, 0.20]),
+            'turn_on_freq':choose([0, 0, 50, 100]),
+            'turn_on_at_once':choose([1, 1, 2, 4, 6]),
+            }
         yield cfg
         count += 1
 
@@ -68,7 +88,6 @@ class Player:
     def start(self):
         self.change_workbook()
         self.loop.create_task(self.play_frames_from_queue())
-        #self.play_frames_from_queue()
         self.loop.call_later(2, self.calc_fps) # convert to second
         self.loop.run_forever()
 

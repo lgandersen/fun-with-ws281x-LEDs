@@ -1,9 +1,10 @@
+# pylint: disable=I1101, W0212
 import numpy as np
-from rpi_ws281x import Adafruit_NeoPixel
-from config import LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL, WS2811
-from utils import create_rgb_array
 
+from rpi_ws281x import Adafruit_NeoPixel
 import _rpi_ws281x as ws
+
+from config import LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL, WS2811
 
 _strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
 _strip.begin()
@@ -26,14 +27,12 @@ def _color24bit_all(colors):
 
 
 def set_colors_all(colors):
-    color24b = _color24bit_all(colors)
-    for n, color in enumerate(color24b.tolist()):
+    colors24bit = _color24bit_all(colors)
+    for n, color in enumerate(colors24bit.tolist()):
         ws.ws2811_led_set(channel, n, color)
     _strip.show()
 
 def clear_all():
-    colors = create_rgb_array((LED_COUNT, ))
-    color24b = _color24bit_all(colors)
     for n, color in enumerate(color24b.tolist()):
         _strip.setPixelColor(n, color)
     _strip.show()
