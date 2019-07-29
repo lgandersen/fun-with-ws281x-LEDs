@@ -1,0 +1,10 @@
+[Unit]
+Description=WS281x Controller
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/python3 /home/pi/fun-with-ws281x-LEDs/script.py
+
+[Install]
+WantedBy=multi-user.target
