@@ -9,6 +9,15 @@ RGB = namedtuple('RGB', ['r', 'g', 'b'])
 rgb_type = np.dtype([('red', 'int'), ('green', 'int'), ('blue', 'int')])
 
 
+def morph_frame(base_frame, frame2morph, fade_rate):
+    red, green, blue = base_frame.red, base_frame.green, base_frame.blue
+
+    frame2morph.red = frame2morph.red + (red - frame2morph.red) * fade_rate
+    frame2morph.green = frame2morph.green + (green - frame2morph.green) * fade_rate
+    frame2morph.blue = frame2morph.blue + (blue - frame2morph.blue) * fade_rate
+    return frame2morph
+
+
 def create_rgb_array(shape):
     if isinstance(shape, int):
         array = np.zeros((shape,), dtype=rgb_type)
@@ -23,7 +32,7 @@ def random_color(colormap):
 
 
 ## FIXME Need to makes this awesome!
-def create_rolling_weights(periods=1, desync_red=True, desync_blue=True):
+def create_oscilating_weights(periods=1, desync_red=True, desync_blue=True):
     if periods > 1:
         weights = 1 - (0.5 * np.sin(np.linspace(0, periods * 2 * np.pi, LED_COUNT)) + 0.5)
     else:

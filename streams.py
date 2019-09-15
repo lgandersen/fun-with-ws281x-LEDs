@@ -6,11 +6,12 @@ import numpy as np
 
 from utils import RGB
 from utils import random_color
+from utils import morph_frame
 from colormap import create_colormap
 from config import LED_COUNT
 
 
-class FrameStreamBase:
+class _FrameStreamBase:
     parameters = None
     frame = create_colormap(RGB(r=0, g=0, b=0), LED_COUNT)
 
@@ -22,16 +23,7 @@ class FrameStreamBase:
                 raise Exception("Parameter '{}' was not provided.".format(parameter))
 
 
-def morph_frame(base_frame, frame2morph, fade_rate):
-    red, green, blue = base_frame.red, base_frame.green, base_frame.blue
-
-    frame2morph.red = frame2morph.red + (red - frame2morph.red) * fade_rate
-    frame2morph.green = frame2morph.green + (green - frame2morph.green) * fade_rate
-    frame2morph.blue = frame2morph.blue + (blue - frame2morph.blue) * fade_rate
-    return frame2morph
-
-
-class PulseCycling(FrameStreamBase):
+class PulseCycling(_FrameStreamBase):
     parameters = (
         'base_frame',
         'offsets',
@@ -58,7 +50,7 @@ class PulseCycling(FrameStreamBase):
         self.frame = morph_frame(self.fading_frame, self.frame, self.fade_rate)
 
 
-class RollingPalette(FrameStreamBase):
+class RollingPalette(_FrameStreamBase):
     parameters = (
         'rolling_palette',
         'roll_step',
@@ -78,7 +70,7 @@ class RollingPalette(FrameStreamBase):
         self.frame[:] = self.rolling_palette[:LED_COUNT]
 
 
-class RollingWeights(FrameStreamBase):
+class RollingWeights(_FrameStreamBase):
     parameters = (
         'base_frame',
         'weights',
@@ -102,7 +94,7 @@ class RollingWeights(FrameStreamBase):
             self.weights[chan] = np.roll(val, self.roll_step)
 
 
-class RandomLightsTurningOn(FrameStreamBase):
+class RandomLightsTurningOn(_FrameStreamBase):
     parameters = (
         'palette',
         'shuffle',
@@ -140,13 +132,13 @@ class RandomLightsTurningOn(FrameStreamBase):
         self.frame = morph_frame(self.fading_frame, self.frame, self.fade_rate)
 
 
-class TurnOnAll(FrameStreamBase):
-    parameters = ('color')
+class TurnOnAll(_FrameStreamBase):
+    parameters = ('color',)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.frame = create_colormap(self.color, LED_COUNT)
 
     def __iter__(self):
+        self.frame = create_colormap(self.color, LED_COUNT)
         while True:
             yield self.frame

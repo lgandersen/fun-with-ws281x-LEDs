@@ -1,63 +1,58 @@
 import numpy as np
 
-from playbooks import RollingPalette, RandomLightsTurningOn, PulseCycling, \
-        RollingWeights
-from player import Player, iter_random_lights_turning_on_configs, iter_pulse_cycling_configs
+from streams import TurnOnAll, PulseCycling, RollingPalette, RollingWeights, RandomLightsTurningOn
+from player import Player
+from stream_generators import all_streams#, random_lights_turning_streams, pulse_cycling_streams
 from config import LED_COUNT
 from strip import clear_all
-from utils import create_rolling_weights, RGB
-from colormap import create_colormap, create_random_discrete_colormap, create_colormap_slice
+from utils import create_oscilating_weights, RGB
+from colormap import create_colormap#, create_random_discrete_colormap, create_colormap_slice
 
-workbooks = [
-    (RandomLightsTurningOn, {
+
+streams = [
+    RandomLightsTurningOn(**{
         'shuffle':True,
-        'palettes':create_colormap('strandtest_rainbow', LED_COUNT),
-        'random_width':(5, 10), # Tuple (start, end) of random sampled widths (start == end implies fixed width)
-        'fading_frame':create_colormap(RGB(r=0, g=0, b=0), LED_COUNT),
-        'fade_rate':0.50,
-        'fade_freq':10, # [ms]
-        'turn_on_freq':0, #[ms]
-        }),
-    (RandomLightsTurningOn, {
-        'shuffle':False,
-        'palettes':[create_colormap_slice('strandtest_rainbow', start=50, end=75, length=25, ratio=1)],
-        'random_width':(1, 1), # Tuple (start, end) of random sampled widths (start == end implies fixed width)
+        'palette':create_colormap('strandtest_rainbow', LED_COUNT),
+        'random_width':(10, 20), # Tuple (start, end) of random sampled widths (start == end implies fixed width)
         'fading_frame':create_colormap(RGB(r=0, g=0, b=0), LED_COUNT),
         'fade_rate':0.05,
-        'fade_freq':10, # [ms]
-        'turn_on_freq':0, #[ms]
+        'turn_on_freq':5, # Turn on every <turn_on_freq>th frame
         }),
-    (RollingWeights, {
+    RollingWeights(**{
         'base_frame':create_colormap('prism', LED_COUNT),
-        'weights':create_rolling_weights(periods=5, desync_blue=False, desync_red=True), # Array to use for rolling
+        #'base_frame':create_colormap('strandtest_rainbow', LED_COUNT),
+        'weights':create_oscilating_weights(periods=5, desync_blue=True, desync_red=True), # Array to use for rolling
         'roll_step':1, # Size of increment in array a each array-roll
-        'roll_freq':0, # Update frequency of the rolling array
+        'roll_freq':1, # Update frequency of the rolling array
         }),
-    (PulseCycling, {
+    PulseCycling(**{
         'base_frame':create_colormap('strandtest_rainbow', LED_COUNT),
-        'offsets':np.arange(0, LED_COUNT, 25), # offsets (and number) of pulses
+        #'offsets':np.arange(0, LED_COUNT, 25), # offsets (and number) of pulses
+        'offsets':np.arange(0, LED_COUNT, 15), # offsets (and number) of pulses
         'fading_frame':create_colormap(RGB(r=0, g=0, b=0), LED_COUNT),
-        'fade_rate':0.50,
-        'fade_freq':10, # [ms]
-        'turn_on_freq':0, #[ms]
+        'fade_rate':0.10,
+        'turn_on_freq':1, #[ms]
         'turn_on_at_once':1,
         }),
-    (RollingPalette, {
+    RollingPalette(**{
         'roll_step':3,
-        'roll_freq':0,
-        'rolling_palette':create_random_discrete_colormap(
-            create_colormap('strandtest_rainbow', 20), 10, 10, LED_COUNT),
+        'roll_freq':5,
+        'rolling_palette': create_colormap('strandtest_rainbow', LED_COUNT)
+        #'rolling_palette': create_random_discrete_colormap(
+        #    create_colormap('strandtest_rainbow', 20), 10, 10, LED_COUNT),
         })
     ]
 
+turn_off = [(TurnOnAll, {'color':RGB(r=0, g=0, b=0)})]
+turn_on = [(TurnOnAll, {'color':RGB(r=255, g=255, b=255)})]
+
 if __name__ == '__main__':
-    #workbooks = [workbooks[0]] #While debugging
-    #workbooks = [(PulseCycling, cfg) for cfg in iter_pulse_cycling_configs(20)]
-    workbooks = [(RandomLightsTurningOn, cfg) for cfg in iter_random_lights_turning_on_configs(20)]
+    streams = [stream for stream in all_streams(200)]
     print('Press Ctrl-C to quit.')
     try:
-        cwbs = Player(workbooks)
+        #cwbs = Player(turn_off)
+        cwbs = Player(streams)
         cwbs.start()
     except KeyboardInterrupt:
-        cwbs.loop.close()
+        #cwbs.loop.close()
         clear_all()
