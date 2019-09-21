@@ -1,7 +1,7 @@
 import numpy as np
 
 from streams import TurnOnAll, PulseCycling, RollingPalette, RollingWeights, RandomLightsTurningOn
-from player import Player
+from player import LEDPlayer
 from stream_generators import all_streams#, random_lights_turning_streams, pulse_cycling_streams
 from config import LED_COUNT
 from strip import clear_all
@@ -50,9 +50,8 @@ if __name__ == '__main__':
     streams = [stream for stream in all_streams(200)]
     print('Press Ctrl-C to quit.')
     try:
-        #cwbs = Player(turn_off)
-        cwbs = Player(streams)
-        cwbs.start()
+        #player = Player(turn_off)
+        player = LEDPlayer(streams)
+        player.start()
     except KeyboardInterrupt:
-        #cwbs.loop.close()
         clear_all()
