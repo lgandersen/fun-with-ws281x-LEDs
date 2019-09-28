@@ -10,6 +10,12 @@ from utils import morph_frame
 from colormap import create_colormap
 from config import LED_COUNT
 
+### TODO: Create a stream with random chunks of coloured spots that moves around in random directions.
+###       Spots should be able to change direction and to change color.
+###       Fade to a baseframe
+
+### TODO: Create a stream where colored chunks fade to another colored chunk.
+###       What color is faded to, should also change a steady frequency
 
 class _FrameStreamBase:
     parameters = None
@@ -66,7 +72,6 @@ class RollingPalette(_FrameStreamBase):
 
             yield self.frame
 
-
     def roll(self):
         self.rolling_palette = np.roll(self.rolling_palette, self.roll_step)
         self.frame[:] = self.rolling_palette[:LED_COUNT]
@@ -117,7 +122,6 @@ class RandomLightsTurningOn(_FrameStreamBase):
                 self.turn_on_led()
 
             self.fade_colors()
-
 
     def turn_on_led(self):
         if self.shuffle:
