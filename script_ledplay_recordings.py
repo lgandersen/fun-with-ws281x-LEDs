@@ -13,4 +13,3 @@ if __name__ == '__main__':
     #player = Player(turn_off)
     player = LEDPlayer(streams)
     player.start()
-

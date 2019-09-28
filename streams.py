@@ -14,8 +14,10 @@ from config import LED_COUNT
 class _FrameStreamBase:
     parameters = None
     frame = create_colormap(RGB(r=0, g=0, b=0), LED_COUNT)
+    config = None
 
     def __init__(self, **kwargs):
+        self.config = kwargs
         for parameter in self.parameters:
             try:
                 setattr(self, parameter, kwargs[parameter])

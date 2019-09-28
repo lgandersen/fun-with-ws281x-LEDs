@@ -33,8 +33,8 @@ def all_streams(limit):
 def random_lights_turning_streams(limit=99999):
     frames_cmap = [
         create_colormap('strandtest_rainbow', LED_COUNT),
-        create_colormap('prism', LED_COUNT),
-        create_colormap('jet', LED_COUNT),
+        #create_colormap('prism', LED_COUNT),
+        #create_colormap('jet', LED_COUNT),
     ]
     random_widths = [
         (2, 2),
@@ -60,8 +60,8 @@ def random_lights_turning_streams(limit=99999):
 def pulse_cycling_streams(limit=999999):
     frames_cmap = [
         create_colormap('strandtest_rainbow', LED_COUNT),
-        create_colormap('prism', LED_COUNT),
-        create_colormap('jet', LED_COUNT),
+        #create_colormap('prism', LED_COUNT),
+        #create_colormap('jet', LED_COUNT),
         ] + [
         create_colormap(tuple(color), LED_COUNT)
         for n, color in enumerate(create_colormap('strandtest_rainbow', 20))

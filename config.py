@@ -1,6 +1,7 @@
 ### Player configuration
 FPS = 31         # How many frames per second is player approximately realying to hardware
 SWITCH_RATE = 20 # How often (in seconds) is the stream changed
+RECORDING_FILE = './test_after_os_upgrade.gz'
 
 ### LED strip configuration:
 LED_COUNT = 200      # Number of LED pixels.

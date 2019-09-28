@@ -1,8 +1,7 @@
 from time import sleep, time as tick
 
-from config import FPS, SWITCH_RATE
-
-from strip import set_colors_all
+from config import FPS, SWITCH_RATE, LED_COUNT
+from utils import create_rgb_array
 
 
 class _Delay:
@@ -20,14 +19,27 @@ class _Delay:
         t_end = tick()
         fps = 1 / (t_end - self.t_start)
         frame_creation_time = 1/fps
-        remaining_time = max(0, (self.expect_frame_creation_time - frame_creation_time)) # If slower theres is nothing to do! :(
+        remaining_time = max(0, (self.expect_frame_creation_time - frame_creation_time)) # If slower there is nothing to do! :(
         # We add only half so we approach to true value instead of giving exact estimate (increases stability):
         self._delay += remaining_time / 2
         self.t_start = tick()
 
 
-class Player:
+def record_stream(stream, nframes=1800):
+    recording = create_rgb_array((nframes, LED_COUNT))
+    for n, frame in enumerate(stream):
+        if n == nframes:
+            break
+
+        recording[n, :] = frame
+
+    return recording
+
+
+class LEDPlayer:
     def __init__(self, streams):
+        from strip import set_colors_all
+        self.set_colors_all = set_colors_all
         self.streams = streams
         self.fps_counter = 0
         self.stream_idx = 0
@@ -40,7 +52,7 @@ class Player:
             offset = 1
             for n, frame in enumerate(self.stream, offset):
                 self.fps_counter += 1
-                set_colors_all(frame)
+                self.set_colors_all(frame)
                 sleep(delay())
                 delay.update()
 
