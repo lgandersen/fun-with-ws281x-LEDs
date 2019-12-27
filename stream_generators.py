@@ -1,4 +1,4 @@
-from random import randint
+from random import randint, uniform
 
 import numpy as np
 from numpy.random import choice as choose
@@ -33,8 +33,8 @@ def all_streams(limit):
 def random_lights_turning_streams(limit=99999):
     frames_cmap = [
         create_colormap('strandtest_rainbow', LED_COUNT),
-        #create_colormap('prism', LED_COUNT),
-        #create_colormap('jet', LED_COUNT),
+        create_colormap('prism', LED_COUNT),
+        create_colormap('jet', LED_COUNT),
     ]
     random_widths = [
         (2, 2),
@@ -50,7 +50,7 @@ def random_lights_turning_streams(limit=99999):
             # Tuple (start, end) of random sampled widths (start == end implies fixed width):
             'random_width':random_widths[choose(len(random_widths))],
             'fading_frame':create_colormap(RGB(r=0, g=0, b=0), LED_COUNT),
-            'fade_rate':choose([0, 0.005, 0.01, 0.10]),
+            'fade_rate':uniform(0,1),
             'turn_on_freq':choose([0, 0, 5, 10]),
             }
         yield RandomLightsTurningOn(**cfg)
@@ -74,7 +74,7 @@ def pulse_cycling_streams(limit=999999):
             'fading_frame':create_colormap(RGB(r=0, g=0, b=0), LED_COUNT),
             'base_frame':frames_cmap[choose(len(frames_cmap))],
             'offsets':np.arange(0, LED_COUNT, choose([25, 40, 50])),
-            'fade_rate':choose([0.05, 0.10, 0.20]),
+            'fade_rate':uniform(0, 1),
             'turn_on_freq':choose([0, 0, 5, 10]),
             'turn_on_at_once':choose([1, 1, 2]),
             }

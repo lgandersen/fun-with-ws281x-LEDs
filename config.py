@@ -1,7 +1,8 @@
 ### Player configuration
 FPS = 31         # How many frames per second is player approximately realying to hardware
 SWITCH_RATE = 60 # How often (in seconds) is the stream changed
-RECORDING_FILE = './test_recordings_0.gz'
+#RECORDING_FILE = './test_recordings_0.gz'
+RECORDING_FILE = './test_recordings_uniform_sampled_rates.gz'
 
 ### LED strip configuration:
 # NOTE 200 used for the recordings
