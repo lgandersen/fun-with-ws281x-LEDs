@@ -1,10 +1,11 @@
 ### Player configuration
 FPS = 31         # How many frames per second is player approximately realying to hardware
-SWITCH_RATE = 20 # How often (in seconds) is the stream changed
-RECORDING_FILE = './test_after_os_upgrade.gz'
+SWITCH_RATE = 60 # How often (in seconds) is the stream changed
+RECORDING_FILE = './test_recordings_0.gz'
 
 ### LED strip configuration:
-LED_COUNT = 200      # Number of LED pixels.
+# NOTE 200 used for the recordings
+LED_COUNT = 350      # Number of LED pixels. NOTE: selv ved 300 LEDs er der for højt spændingsfald til at alt kan trækkes på fuld power (hvid). Det ses dog ikke af programmerne.
 LED_PIN = 18         # GPIO pin connected to the pixels (18 uses PWM!).
 #LED_PIN = 21        # GPIO pin connected to the pixels (10 uses SPI /dev/spidev0.0).
 LED_FREQ_HZ = 800000 # LED signal frequency in hertz (usually 800khz)

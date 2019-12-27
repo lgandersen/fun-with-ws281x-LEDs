@@ -44,13 +44,16 @@ streams = [
     ]
 
 turn_off = [(TurnOnAll, {'color':RGB(r=0, g=0, b=0)})]
-turn_on = [(TurnOnAll, {'color':RGB(r=255, g=255, b=255)})]
+turn_on = [TurnOnAll(**{'color':RGB(r=255, g=255, b=255)})]
 
 if __name__ == '__main__':
-    streams = [stream for stream in all_streams(200)]
+    #streams = [stream for stream in all_streams(200)]
     print('Press Ctrl-C to quit.')
     try:
-        #player = Player(turn_off)
+        #player = LEDPlayer(turn_on)
+        #player = LEDPlayer(streams)
+        #player = LEDPlayer([streams[1]])
+
         player = LEDPlayer(streams)
         player.start()
     except KeyboardInterrupt:

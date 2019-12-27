@@ -4,7 +4,7 @@ After=multi-user.target
 
 [Service]
 Type=idle
-ExecStart=/usr/bin/python3 /home/pi/fun-with-ws281x-LEDs/script.py
+ExecStart=/usr/bin/python3 /home/pi/fun-with-ws281x-LEDs/script_ledplay_streams.py
 
 [Install]
 WantedBy=multi-user.target
