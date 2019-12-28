@@ -55,10 +55,10 @@ if __name__ == '__main__':
     try:
         #player = LEDPlayer(turn_on)
         #player = LEDPlayer(streams)
-        player = LEDPlayer([streams[-1]])
+        #player = LEDPlayer([streams[-3:-1]])
+        #player = LEDPlayer(streams[-2:])
 
-        #streams = [stream for stream in all_streams(500)]
-        #player = LEDPlayer(streams)
+        player = LEDPlayer([stream for stream in all_streams(500)])
         player.start()
     except KeyboardInterrupt:
         clear_all()

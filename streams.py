@@ -30,6 +30,8 @@ class _FrameStreamBase:
             except:
                 raise Exception("Parameter '{}' was not provided.".format(parameter))
 
+COLORMAP_LEN = 50
+
 class MonteCarloColoring(_FrameStreamBase):
     parameters = (
         'nsources',
@@ -38,8 +40,7 @@ class MonteCarloColoring(_FrameStreamBase):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.idx = 0
-        self.colormap = create_colormap('strandtest_rainbow', LED_COUNT)
+        self.colormap = create_colormap('strandtest_rainbow', COLORMAP_LEN)
         self.current_color_idx = np.zeros((LED_COUNT,), dtype='int')
         self.mean = np.linspace(0, LED_COUNT, self.nsources + 2)
         self.mean = self.mean[1:-1]
@@ -49,9 +50,9 @@ class MonteCarloColoring(_FrameStreamBase):
         idx = np.round(np.random.normal(self.mean, self.std))
         idx[idx > (LED_COUNT - 1)] = LED_COUNT - 1
         idx = idx.astype('int')
-        self.current_color_idx[idx] += 1
-        for n in idx:
-            self.frame[n] = self.colormap[self.current_color_idx[n]]
+        self.current_color_idx[idx] = self.current_color_idx[idx] + 1
+        self.current_color_idx[self.current_color_idx > COLORMAP_LEN - 1] = COLORMAP_LEN - 1
+        self.frame[idx] = self.colormap[self.current_color_idx[idx]]
 
     def __iter__(self):
         for n in itertools.count():
@@ -74,7 +75,7 @@ class PulseCycling(_FrameStreamBase):
     def __iter__(self):
         for n in itertools.count():
             if ((n + 1) % self.turn_on_freq) == 0:
-                self.move_pulse()
+                self.move_pulses()
 
             self.fade_colors()
             yield self.frame
