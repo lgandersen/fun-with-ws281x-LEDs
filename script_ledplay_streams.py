@@ -1,6 +1,6 @@
 import numpy as np
 
-from streams import TurnOnAll, PulseCycling, RollingPalette, RollingWeights, RandomLightsTurningOn
+from streams import TurnOnAll, PulseCycling, RollingPalette, RollingWeights, RandomLightsTurningOn, MonteCarloColoring
 from player import LEDPlayer
 from stream_generators import all_streams#, random_lights_turning_streams, pulse_cycling_streams
 from config import LED_COUNT
@@ -40,6 +40,10 @@ streams = [
         'rolling_palette': create_colormap('strandtest_rainbow', LED_COUNT)
         #'rolling_palette': create_random_discrete_colormap(
         #    create_colormap('strandtest_rainbow', 20), 10, 10, LED_COUNT),
+        }),
+    MonteCarloColoring(**{
+        'nsources':4,
+        'turn_on_freq':1
         })
     ]
 
@@ -47,14 +51,14 @@ turn_off = [(TurnOnAll, {'color':RGB(r=0, g=0, b=0)})]
 turn_on = [TurnOnAll(**{'color':RGB(r=255, g=255, b=255)})]
 
 if __name__ == '__main__':
-    #streams = [stream for stream in all_streams(200)]
     print('Press Ctrl-C to quit.')
     try:
         #player = LEDPlayer(turn_on)
         #player = LEDPlayer(streams)
-        #player = LEDPlayer([streams[1]])
+        player = LEDPlayer([streams[-1]])
 
-        player = LEDPlayer(streams)
+        #streams = [stream for stream in all_streams(500)]
+        #player = LEDPlayer(streams)
         player.start()
     except KeyboardInterrupt:
         clear_all()
