@@ -31,6 +31,7 @@ streams = [
         'offsets':np.arange(0, LED_COUNT, 15), # offsets (and number) of pulses
         'fading_frame':create_colormap(RGB(r=0, g=0, b=0), LED_COUNT),
         'fade_rate':0.10,
+        'direction':'forward',
         'turn_on_freq':1, #[ms]
         'turn_on_at_once':1,
         }),
@@ -55,10 +56,10 @@ if __name__ == '__main__':
     try:
         #player = LEDPlayer(turn_on)
         #player = LEDPlayer(streams)
-        #player = LEDPlayer([streams[-3:-1]])
+        player = LEDPlayer([streams[2]])
         #player = LEDPlayer(streams[-2:])
 
-        player = LEDPlayer([stream for stream in all_streams(500)])
+        #player = LEDPlayer([stream for stream in all_streams(500)])
         player.start()
     except KeyboardInterrupt:
         clear_all()

@@ -30,7 +30,7 @@ class _FrameStreamBase:
             except:
                 raise Exception("Parameter '{}' was not provided.".format(parameter))
 
-COLORMAP_LEN = 50
+COLORMAP_LEN = 30
 
 class MonteCarloColoring(_FrameStreamBase):
     parameters = (
@@ -68,9 +68,21 @@ class PulseCycling(_FrameStreamBase):
         'offsets',
         'fading_frame',
         'fade_rate',
+        'direction',
         'turn_on_freq',
         'turn_on_at_once',
         )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if self.direction == 'backward':
+            self.delta = -1
+
+        if self.direction == 'forward':
+            self.delta = 1
+
+        elif self.direction == 'random':
+            self.delta = np.random.choice([1, -1], len(self.offsets))
 
     def __iter__(self):
         for n in itertools.count():
@@ -82,7 +94,7 @@ class PulseCycling(_FrameStreamBase):
 
     def move_pulses(self):
         for _ in range(self.turn_on_at_once):
-            self.offsets = (self.offsets + 1) % LED_COUNT
+            self.offsets = (self.offsets + self.delta) % LED_COUNT
             self.frame[self.offsets] = self.base_frame[self.offsets]
 
     def fade_colors(self):
