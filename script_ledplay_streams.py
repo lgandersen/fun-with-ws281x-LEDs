@@ -30,9 +30,9 @@ streams = [
         #'offsets':np.arange(0, LED_COUNT, 25), # offsets (and number) of pulses
         'offsets':np.arange(0, LED_COUNT, 15), # offsets (and number) of pulses
         'fading_frame':create_colormap(RGB(r=0, g=0, b=0), LED_COUNT),
-        'fade_rate':0.10,
+        'fade_rate':0.04,
         'direction':'forward',
-        'turn_on_freq':1, #[ms]
+        'turn_on_freq':3, #[ms]
         'turn_on_at_once':1,
         }),
     RollingPalette(**{
@@ -48,18 +48,20 @@ streams = [
         })
     ]
 
-turn_off = [(TurnOnAll, {'color':RGB(r=0, g=0, b=0)})]
+turn_off = [TurnOnAll(**{'color':RGB(r=0, g=0, b=0)})]
 turn_on = [TurnOnAll(**{'color':RGB(r=255, g=255, b=255)})]
 
 if __name__ == '__main__':
     print('Press Ctrl-C to quit.')
     try:
         #player = LEDPlayer(turn_on)
+        #player = LEDPlayer(turn_off)
         #player = LEDPlayer(streams)
-        player = LEDPlayer([streams[2]])
+        player = LEDPlayer([streams[1]])
         #player = LEDPlayer(streams[-2:])
 
         #player = LEDPlayer([stream for stream in all_streams(500)])
         player.start()
     except KeyboardInterrupt:
+        del player
         clear_all()

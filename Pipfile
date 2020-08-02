@@ -11,6 +11,7 @@ pandas = "*"
 matplotlib = "*"
 joblib = "*"
 jupyter = "*"
+ipython = "*"
 
 [requires]
 python_version = "3.6"
